@@ -1,6 +1,7 @@
 import torch.nn as nn
 
 
+# Simple CNN model
 
 class CNNVisionModel(nn.Module):
     def __init__(self):
@@ -23,8 +24,6 @@ class CNNVisionModel(nn.Module):
         self.model.append(nn.Linear(size,n_classes))
 
     def forward(self,x):
-#        x = x.unsqueeze(1)
         out = self.model(x)
         return out
-
 
