@@ -2,29 +2,41 @@ import torch
 import torch.nn as nn
 from dataset import ImageDataset
 from torch.utils.data import DataLoader
-from models import CNNVisionModel
+from cnn import CNNVisionModel
+from vision_transformer import VisionTransformer
 import sys
 import os
 import argparse
 
 
 class VisionModelTrainer:
-    def __init__(self, train_file, dev_file, image_path = '', batch_size = 16, learning_rate = 0.0001):
-        self.model = CNNVisionModel()
+    def __init__(self, train_file, dev_file, image_path = '', batch_size = 16, learning_rate = 0.0001, model = 'cnn', out_dir = '/tmp'):
+
+        if model != 'cnn' and model != 'vit':
+            print('ERROR. Only "cnn" or "vit" models are available')
+            quit()
+
         train_dataset = ImageDataset(train_file, image_path = image_path)
-        input_foo_sample = torch.zeros(train_dataset.get_sample_shape()).unsqueeze(0)
-        print('input_foo_sample = ', input_foo_sample.shape)
-        
-        out = self.model(input_foo_sample)
-        linear_layer_size = out.shape[1]
-        n_classes = train_dataset.get_num_classes()
-        self.model.add_linear_layer(linear_layer_size,n_classes)
+            
+        if model == 'cnn':    
+            self.model = CNNVisionModel()
+            input_foo_sample = torch.zeros(train_dataset.get_sample_shape()).unsqueeze(0)
+            out = self.model(input_foo_sample)
+            linear_layer_size = out.shape[1]
+            n_classes = train_dataset.get_num_classes()
+            self.model.add_linear_layer(linear_layer_size,n_classes)
+
+        else:
+            self.model = VisionTransformer(train_dataset.get_sample_shape()[0],train_dataset.get_num_classes())
+            
+
         self.model.cuda()
         print('model = ', self.model)
         self.train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
         dev_dataset = ImageDataset(train_file, image_path = image_path)
         self.dev_dataloader = DataLoader(dev_dataset, batch_size = 32, shuffle = False)        
         self.optimizer = torch.optim.Adam(self.model.parameters(),lr = learning_rate)
+        self.out_dir = out_dir
 
     def train_epoch(self,epoch):
         train_loss = 0.0
@@ -67,16 +79,20 @@ class VisionModelTrainer:
             dev_accuracy += torch.sum(torch.eq(predictions,labels))
             total_dev_samples += len(features)
 
-
         dev_loss /= total_dev_samples
         dev_accuracy /= total_dev_samples
 #        print('train_accuracy = ', train_accuracy.item())
-        print('EPOCH %d. Train: loss = %5.5f accuracy = %5.1f.  Test:  loss = %5.5f accuracy = %5.1f' %(epoch, train_loss, 100*train_accuracy, dev_loss, 100*dev_accuracy))
+        return train_loss, train_accuracy, dev_loss, train_accuracy    
             
-            
-    def train(self,n_epochs = 80):
-        for epoch in range(n_epochs):
-            self.train_epoch(epoch)
+    def train(self,n_epochs = 100):
+        best_dev_accuracy = 0.0
+        for epoch in range(n_epochs):            
+            train_loss,train_accuracy,dev_loss,dev_accuracy = self.train_epoch(epoch)
+            print('EPOCH %d. Train: loss = %5.5f accuracy = %5.1f.  Test:  loss = %5.5f accuracy = %5.1f' %(epoch, train_loss, 100*train_accuracy, dev_loss, 100*dev_accuracy))
+            if dev_accuracy > best_dev_accuracy:
+                best_dev_accuracy = dev_accuracy
+                torch.save(self.model,os.path.join(self.out_dir,'best_model.pth'))
+        torch.save(self.model,os.path.join(self.out_dir,'final_model.pth'))
         
         
 def main():
@@ -84,8 +100,10 @@ def main():
     parser.add_argument('--train_csv_file', help = 'csv file for the training dataset. Each row in the csv must have at least two columns: "filename" and "label:', required = True)
     parser.add_argument('--dev_csv_file', help = 'csv file for the dev dataset. Each row in the csv must have at least two columns: "filename" and "label:', required = True)
     parser.add_argument('--image_path', help = 'path that will be prepend to the file names in both the train and dev csv files', required = False, default = '')
+    parser.add_argument('--model', help = 'model (available models: cnn, vit) ' , default = 'cnn')
+    parser.add_argument('--out_dir', help = 'directory where the model will be saved', default = '/tmp')
     args = parser.parse_args()
-    trainer = VisionModelTrainer(args.train_csv_file, args.dev_csv_file, image_path = args.image_path)
+    trainer = VisionModelTrainer(args.train_csv_file, args.dev_csv_file, image_path = args.image_path, model = args.model, out_dir = args.out_dir)
     trainer.train()
  
     

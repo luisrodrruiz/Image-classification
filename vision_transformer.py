@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+import torch
 
 
 # Vision Transformer
@@ -91,7 +91,7 @@ class AttentionBlock(nn.Module):
 
 
 class VisionTransformer(nn.Module):
-    def __init__(self, img_size, patch_size, in_channels, num_classes, embed_dim, num_heads, ff_dim, num_layers, dropout_p=0.0):
+    def __init__(self, img_size, num_classes, patch_size = 16, in_channels = 3,  embed_dim = 768, num_heads = 12 , ff_dim = 2048, num_layers = 4, dropout_p=0.0):
         """
         Vision Transformer (ViT) model.
 
@@ -103,7 +103,7 @@ class VisionTransformer(nn.Module):
             embed_dim (int): Embedding dimension.
             num_heads (int): Number of attention heads.
             ff_dim (int): Dimension of the feed-forward network's hidden layer.
-            num_layers (int): Number of attention blocks.
+            num_layers (int): Number of attention blocks.tr
             dropout (float): Dropout probability.
         """
         super(VisionTransformer, self).__init__()
@@ -141,25 +141,4 @@ class VisionTransformer(nn.Module):
 
 
 
-    # Example usage:
-if __name__ == "__main__":
-    img_size = 224
-    patch_size = 16
-    in_channels = 3
-    num_classes = 10
-    embed_dim = 768
-    num_heads = 12
-    ff_dim = 3072
-    num_layers = 12
-    batch_size = 2
-
-    import torch
-
-    input_tensor = torch.randn(batch_size, in_channels, img_size, img_size)
-
-    vit = VisionTransformer(img_size, patch_size, in_channels, num_classes, embed_dim, num_heads, ff_dim, num_layers)
-    output_tensor = vit(input_tensor)
-
-    print("Input shape:", input_tensor.shape)
-    print("Output shape:", output_tensor.shape)
 
