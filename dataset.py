@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 import pandas as pd
 import os
-import matplotlib.pyplot as plt
+
 
 
 # Dataset for  fashion_mnist 
