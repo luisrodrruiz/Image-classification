@@ -91,7 +91,7 @@ class AttentionBlock(nn.Module):
 
 
 class VisionTransformer(nn.Module):
-    def __init__(self, img_size, num_classes, patch_size = 16, in_channels = 3,  embed_dim = 768, num_heads = 12 , ff_dim = 2048, num_layers = 4, dropout_p=0.0):
+    def __init__(self, img_size, num_classes, patch_size = 16, in_channels = 3,  embed_dim = 512, num_heads = 8 , ff_dim = 2048, num_layers = 4, dropout_p=0.4):
         """
         Vision Transformer (ViT) model.
 

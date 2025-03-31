@@ -15,7 +15,7 @@ class ImageDataset(Dataset):
         The dataset is expected to be in a csv file, where each row will
         contain at least two columns: filename and label.
     """
-    def __init__(self, datafile,  image_path = ''):
+    def __init__(self, datafile,  image_path = '', label_map = None):
         """ The constructor loads the dataset into memory
             Parameters:
                datafile: csv file containing the dataset
@@ -27,19 +27,22 @@ class ImageDataset(Dataset):
         """
         self.features = []
         self.labels = []
-        tmp_label_map = {}
+        if not label_map:
+            self.label_map = {}
+        else:
+            self.label_map = label_map
+            
         df = pd.read_csv(datafile)
         for index, row in df.iterrows():
             label = row['label']
-            if not label in tmp_label_map:
-                tmp_label_map[label] = len(tmp_label_map)
-            self.labels.append(tmp_label_map[label])
+            if not label in self.label_map:
+                self.label_map[label] = len(self.label_map)
+            self.labels.append(self.label_map[label])
             filename = row['filename']
             image = np.asarray(Image.open(os.path.join(image_path,filename)),dtype=np.float32)
             self.features.append(np.transpose(image,(2,0,1)))
-        # The label map can be used to map the numeric output of the model
-        # to the label string in the csv files
-        self.label_map =  dict((v,k) for k,v in tmp_label_map.items())
+           
+           
 
 
         

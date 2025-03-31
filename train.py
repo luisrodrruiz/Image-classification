@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from dataset import ImageDataset
 from torch.utils.data import DataLoader
-from cnn import CNNVisionModel
+from resnet import ResNet
 from vision_transformer import VisionTransformer
 import sys
 import os
@@ -12,29 +12,24 @@ import argparse
 class VisionModelTrainer:
     def __init__(self, train_file, dev_file, image_path = '', batch_size = 16, learning_rate = 0.0001, model = 'cnn', out_dir = '/tmp'):
 
-        if model != 'cnn' and model != 'vit':
-            print('ERROR. Only "cnn" or "vit" models are available')
+        if model != 'vit' and model !='resnet18':
+            print('ERROR. Only "resnet18" or "vit" models are available')
             quit()
 
         train_dataset = ImageDataset(train_file, image_path = image_path)
-            
-        if model == 'cnn':    
-            self.model = CNNVisionModel()
-            input_foo_sample = torch.zeros(train_dataset.get_sample_shape()).unsqueeze(0)
-            out = self.model(input_foo_sample)
-            linear_layer_size = out.shape[1]
-            n_classes = train_dataset.get_num_classes()
-            self.model.add_linear_layer(linear_layer_size,n_classes)
+        n_classes = train_dataset.get_num_classes()
+        if model == 'resnet18':
+            self.model = ResNet(n_classes = n_classes)
 
         else:
-            self.model = VisionTransformer(train_dataset.get_sample_shape()[0],train_dataset.get_num_classes())
+            self.model = VisionTransformer(train_dataset.get_sample_shape()[0],n_classes)
             
 
         self.model.cuda()
         print('model = ', self.model)
         self.train_dataloader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True)
-        dev_dataset = ImageDataset(train_file, image_path = image_path)
-        self.dev_dataloader = DataLoader(dev_dataset, batch_size = 32, shuffle = False)        
+        dev_dataset = ImageDataset(dev_file, image_path = image_path, label_map = train_dataset.label_map)
+        self.dev_dataloader = DataLoader(dev_dataset, batch_size = 64, shuffle = False)        
         self.optimizer = torch.optim.Adam(self.model.parameters(),lr = learning_rate)
         self.out_dir = out_dir
 
@@ -82,7 +77,7 @@ class VisionModelTrainer:
         dev_loss /= total_dev_samples
         dev_accuracy /= total_dev_samples
 #        print('train_accuracy = ', train_accuracy.item())
-        return train_loss, train_accuracy, dev_loss, train_accuracy    
+        return train_loss, train_accuracy, dev_loss, dev_accuracy    
             
     def train(self,n_epochs = 100):
         best_dev_accuracy = 0.0
