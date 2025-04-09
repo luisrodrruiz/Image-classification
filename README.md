@@ -19,5 +19,5 @@ The main script takes the following parameters:
 Optionally, the following parameters can be specified:
 
 - model: model to use ("cnn" or "vit")
-- image_path: path to be prepended to the "filename" column in the csv files
+- image_path: path to be prepended to the path in "filename" column in the csv files (to convert relative paths in csv to absolute paths if needed)
 - out_dir: Output directory where the trained models will be saved
